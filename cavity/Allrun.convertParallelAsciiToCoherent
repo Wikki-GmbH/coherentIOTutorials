@@ -1,0 +1,39 @@
+#!/bin/sh
+cd "${0%/*}" || exit                                # Run from this directory
+. ${WM_PROJECT_DIR:?}/bin/tools/RunFunctions        # Tutorial run functions
+#------------------------------------------------------------------------------
+
+restore0Dir
+cp controlDict.orig system/controlDict
+
+# Create and decompose mesh in ascii format
+sed -i 's/coherent/ascii/g' system/controlDict
+runApplication -s 'ascii' blockMesh
+runApplication decomposePar
+
+# Run using ascii format
+runParallel $(getApplication)
+
+# Overwrite the mesh with the one in the coherent format
+sed -i 's/ascii/coherent/g' system/controlDict
+runApplication -s 'coherent' blockMesh
+
+# Decompose the coherent mesh such that it corresponds to the decomposed mesh
+# in the ascii format.  If the decomposed mesh was also renumbered, use the
+# appropriate renumber method instead of none.
+runApplication -s coherentDecompose renumberMesh -decompose -overwrite \
+    -no-fields -renumber-method none
+
+# Use renumberMesh as a converter.  It reads the coherent mesh from
+# constant/polyMesh since 'coherent' is specified as write format in
+# controlDict.  Then, it reads the fields in legacy format contained within the
+# processor directories and writes them in the coherent format.
+runParallel -s convert renumberMesh -latestTime -renumber-method none
+
+echo '\nFirst 3 elements of U in legacy format:'
+grep -r "internalField" processor0/0.5/U -A 5
+
+echo '\nFirst 3 elements of U in coherent format:'
+bpls -d 0.505/data.bp/ U/internalField -c "3,3,1" -n 3
+
+#------------------------------------------------------------------------------

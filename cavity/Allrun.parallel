@@ -1,0 +1,24 @@
+#!/bin/sh
+cd "${0%/*}" || exit                                # Run from this directory
+. ${WM_PROJECT_DIR:?}/bin/tools/RunFunctions        # Tutorial run functions
+#------------------------------------------------------------------------------
+
+restore0Dir
+cp controlDict.orig system/controlDict
+
+# For a parallel run with the coherent format, the fields need to be present in
+# the time step folders of the root directory.  Fields that specify a legacy
+# format (e.g. ascii) in the header are recognized as fields from a serial run
+# and will lead to an error.  Thus, change the format to coherent in the header.
+sed -i 's/ascii/coherent/g' 0/*
+
+runApplication blockMesh
+
+# Decomposition is achieved by the renumberMesh tool that additionally
+# renumbers the partitions (with Cuthill-Mckee as default algorithm) for better
+# performance during the run
+runApplication renumberMesh -decompose
+
+runParallel $(getApplication)
+
+#------------------------------------------------------------------------------
