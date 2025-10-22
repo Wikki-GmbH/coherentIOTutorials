@@ -24,6 +24,11 @@ Weiß, R.G., Lesnik, S., Galeazzo, F.C.C., Ruopp, A., Rusche, H., 2024. Coherent
 - For a serial run, the fields may be in a legacy format. User needs to make sure that cell/face order of the fields corresponds to the coherent mesh.
 - For a parallel run with the coherent format, the coherent fields need to be present in the time step folders within the root directory. Fields that specify a legacy format (e.g. ascii) in the header are recognized as fields from a serial run and will cause an error. Thus, make sure that all field files indicate “coherent” format in the file headers (even if the fields consist only of uniform fields that has the same representation in all the formats). Alternatively, fields in legacy format may be supplied. These need to be located as usual in processorXX (or processorsXX for collated) directories. Again, user needs to make sure that cell/face order of the fields corresponds to the coherent mesh.
 
+## Tutorials
+Few tutorials showcasing possible workflows with the coherent format are provided. The functionality is demonstrated via Allrun scripts.
+- cavity: standard lid-driven cavity case from the tutorials folder
+- occDrivAerStaticMesh: a DrivAer case modified for the 1st OpenFOAM HPC Challenge (source: https://develop.openfoam.com/committees/hpc/-/tree/develop/incompressible/simpleFoam/occDrivAerStaticMesh)
+
 ## General notes
 - Mesh, geometric and dimensioned fields are supported by the new format.
 - All I/O data that is not supported by the coherent format yet is attempted to be handled via collated file handler. Thus, processorsXX folder may be created during runs.

@@ -1,0 +1,3 @@
+. /home/sles/foam/OpenFOAM-v2412-coherentIO/bin/tools/CleanFunctions
+cleanCase0
+rm -rf logFiles
