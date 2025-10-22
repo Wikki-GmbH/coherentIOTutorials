@@ -9,30 +9,31 @@ cp controlDict.orig system/controlDict
 # Create a mesh in ascii format
 foamDictionary -entry writeFormat -set ascii system/controlDict
 runApplication -s 'ascii' blockMesh
+runApplication decomposePar
 
 # Run using ascii format
-runApplication $(getApplication)
+runParallel -s 'ascii' $(getApplication)
 
-## Use renumberMesh as a converter in two steps: first for the mesh, then for
-# the fields.
+## Use renumberMesh as a converter only for the mesh, fields stay untouched.
 
 # Utility renumberMesh reads the mesh in legacy format from constant/polyMesh
 # since 'ascii' is specified as write format in controlDict.  Flag
 # "-write-coherent" enforces writing the mesh in coherent format.  Flag
 # "-overwrite" enforces writing to constant/polyMesh.
-runApplication -s convert-mesh renumberMesh -no-fields -renumber-method none \
+runParallel -s 'convert-mesh' renumberMesh -no-fields -renumber-method none \
     -write-coherent -overwrite
 
-# Now set writeFormat to coherent for field conversion.  The mesh will be read
-# in coherent format from constant/polyMesh.  The fields will be read in legacy
-# format and written in coherent format.
+# Now set writeFormat to coherent to enforce reading the coherent mesh.  The
+# fields will be read in legacy format and written in coherent format.
 foamDictionary -entry writeFormat -set coherent system/controlDict
-runApplication -s convert-fields renumberMesh -latestTime -renumber-method none
+foamDictionary -entry startFrom -set latestTime system/controlDict
+foamDictionary -entry endTime -set 1 system/controlDict
+runParallel -s 'coherent' $(getApplication)
 
-echo '\nFirst 3 elements of U in legacy format:'
-grep -r "internalField" 0.5/U -A 5
+echo '\nFirst 3 elements of U in legacy format from processor 0 and time 0.5:'
+grep -r "internalField" processor0/0.5/U -A 5
 
-echo '\nFirst 3 elements of U in coherent format:'
-bpls -d 0.505/data.bp/ U/internalField -c "3,3,1" -n 3
+echo '\nFirst 3 elements of U in coherent format from time 1:'
+bpls -d 1/data.bp/ U/internalField -c "3,3,1" -n 3
 
 #------------------------------------------------------------------------------

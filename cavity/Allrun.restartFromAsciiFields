@@ -13,8 +13,7 @@ runApplication -s 'ascii' blockMesh
 # Run using ascii format
 runApplication $(getApplication)
 
-## Use renumberMesh as a converter in two steps: first for the mesh, then for
-# the fields.
+## Use renumberMesh as a converter only for the mesh, fields stay untouched.
 
 # Utility renumberMesh reads the mesh in legacy format from constant/polyMesh
 # since 'ascii' is specified as write format in controlDict.  Flag
@@ -23,16 +22,17 @@ runApplication $(getApplication)
 runApplication -s convert-mesh renumberMesh -no-fields -renumber-method none \
     -write-coherent -overwrite
 
-# Now set writeFormat to coherent for field conversion.  The mesh will be read
-# in coherent format from constant/polyMesh.  The fields will be read in legacy
-# format and written in coherent format.
+# Now set writeFormat to coherent to enforce reading the coherent mesh.  The
+# fields will be read in legacy format and written in coherent format.
 foamDictionary -entry writeFormat -set coherent system/controlDict
-runApplication -s convert-fields renumberMesh -latestTime -renumber-method none
+foamDictionary -entry startFrom -set latestTime system/controlDict
+foamDictionary -entry endTime -set 1 system/controlDict
+runApplication -s coherent $(getApplication)
 
-echo '\nFirst 3 elements of U in legacy format:'
+echo '\nFirst 3 elements of U in legacy format from time 0.5:'
 grep -r "internalField" 0.5/U -A 5
 
-echo '\nFirst 3 elements of U in coherent format:'
-bpls -d 0.505/data.bp/ U/internalField -c "3,3,1" -n 3
+echo '\nFirst 3 elements of U in coherent format from time 1:'
+bpls -d 1/data.bp/ U/internalField -c "3,3,1" -n 3
 
 #------------------------------------------------------------------------------
