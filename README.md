@@ -38,7 +38,7 @@ Few tutorials showcasing possible workflows with the coherent format are provide
 
 ### Not supported at the moment
 - Converting both the mesh and fields in one go.
-- Running snappyHexMesh in parallel (probably, a path lookup issue).
+- Running `snappyHexMesh -overwrite` in parallel (probably, a path lookup issue). Executing `snappyHexMesh` without the `-overwrite` flag is not an issue.
 - Mesh and field conversion from the coherent to legacy format.
 - Cell-, face-, point-zones.
 - Cyclic BC.
