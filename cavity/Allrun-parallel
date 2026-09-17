@@ -17,7 +17,7 @@ runApplication blockMesh
 # Decomposition is achieved by the renumberMesh tool that additionally
 # renumbers the partitions (with Cuthill-Mckee as default algorithm) for better
 # performance during the run
-runApplication renumberMesh -decompose
+runApplication renumberMesh -decompose -overwrite
 
 runParallel $(getApplication)
 

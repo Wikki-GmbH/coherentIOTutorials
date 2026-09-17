@@ -1,0 +1,34 @@
+#!/bin/sh
+cd "${0%/*}" || exit                                # Run from this directory
+. ${WM_PROJECT_DIR:?}/bin/tools/RunFunctions        # Tutorial run functions
+#------------------------------------------------------------------------------
+
+# Round trip ascii -> coherent -> ascii with foamCoherentConvert
+# (build with applications/Allwmake)
+
+restore0Dir
+cp controlDict.orig system/controlDict
+
+# Create mesh and run in ascii format
+foamDictionary -entry writeFormat -set ascii system/controlDict
+runApplication blockMesh
+runApplication $(getApplication)
+
+# Convert mesh and fields (all times) to coherent format
+runApplication -s toCoherent foamCoherentConvert coherent
+
+# Continue the run in coherent format
+foamDictionary -entry writeFormat -set coherent system/controlDict
+foamDictionary -entry startFrom -set latestTime system/controlDict
+foamDictionary -entry endTime -set 1 system/controlDict
+runApplication -s coherent $(getApplication)
+
+# Convert back to ascii format. The coherent files are removed.
+runApplication -s toLegacy foamCoherentConvert ascii
+
+# Continue the run in ascii format
+foamDictionary -entry writeFormat -set ascii system/controlDict
+foamDictionary -entry endTime -set 1.5 system/controlDict
+runApplication -s ascii $(getApplication)
+
+#------------------------------------------------------------------------------

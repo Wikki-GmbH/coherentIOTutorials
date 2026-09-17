@@ -1,0 +1,39 @@
+#!/bin/sh
+cd "${0%/*}" || exit                                # Run from this directory
+. ${WM_PROJECT_DIR:?}/bin/tools/RunFunctions        # Tutorial run functions
+#------------------------------------------------------------------------------
+
+# Parallel round trip with the collated file handler and binary format:
+# collated binary -> coherent -> collated binary, using foamCoherentConvert
+# (build with applications/Allwmake)
+
+restore0Dir
+cp controlDict.orig system/controlDict
+
+# Create mesh, decompose and run in binary format with collated files
+# (processors<N> directory instead of processor<n> directories)
+foamDictionary -entry writeFormat -set binary system/controlDict
+runApplication blockMesh
+runApplication decomposePar -fileHandler collated
+runParallel $(getApplication) -fileHandler collated
+
+# Convert mesh and fields (all times) to coherent format.  The collated
+# legacy files are read, the partitioning is retained.
+runParallel -s toCoherent foamCoherentConvert coherent -fileHandler collated
+
+# Continue the run in coherent format
+foamDictionary -entry writeFormat -set coherent system/controlDict
+foamDictionary -entry startFrom -set latestTime system/controlDict
+foamDictionary -entry endTime -set 1 system/controlDict
+runParallel -s coherent $(getApplication)
+
+# Convert back to binary format.  With -fileHandler collated the legacy
+# output is written collated again (without it: processor<n> directories)
+runParallel -s toLegacy foamCoherentConvert binary -fileHandler collated
+
+# Continue the run in binary format with collated files
+foamDictionary -entry writeFormat -set binary system/controlDict
+foamDictionary -entry endTime -set 1.5 system/controlDict
+runParallel -s binary $(getApplication) -fileHandler collated
+
+#------------------------------------------------------------------------------

@@ -1,0 +1,10 @@
+#!/bin/sh
+cd "${0%/*}" || exit                                # Run from this directory
+#------------------------------------------------------------------------------
+
+wmake foamCoherentConvert
+
+echo
+echo "For bash completion:  foamAddCompletion foamCoherentConvert"
+
+#------------------------------------------------------------------------------
